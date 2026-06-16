@@ -1,0 +1,30 @@
+{
+  "name": "ai-desktop-assistant",
+  "version": "1.0.0",
+  "description": "AI 桌面助手 - Electron 版本",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": ["electron", "desktop", "ai"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.ai.desktop.assistant",
+    "productName": "AI桌面助手",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "icon.png"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.png"
+    ]
+  }
+}

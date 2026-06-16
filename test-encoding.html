@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 测试 - 中文编码验证</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a4a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #6366f1;
+        }
+        h2 {
+            color: #6366f1;
+        }
+        pre {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .success {
+            color: #4ade80;
+        }
+        .error {
+            color: #f87171;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 API 中文编码测试</h1>
+    
+    <div class="test-section">
+        <h2>聊天 API 测试</h2>
+        <button onclick="testChat()">测试聊天 API</button>
+        <pre id="chat-result">点击按钮测试...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>设置 API 测试</h2>
+        <button onclick="testSettings()">测试设置 API</button>
+        <pre id="settings-result">点击按钮测试...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>系统监控 API 测试</h2>
+        <button onclick="testMonitor()">测试监控 API</button>
+        <pre id="monitor-result">点击按钮测试...</pre>
+    </div>
+
+    <script>
+        async function testChat() {
+            const resultEl = document.getElementById('chat-result');
+            try {
+                const response = await fetch('http://localhost:8007/api/chat/');
+                const data = await response.json();
+                resultEl.innerHTML = `<span class="success">✅ 成功!</span>\n\n` + 
+                    JSON.stringify(data, null, 2);
+                
+                // 验证中文
+                if (data.length > 0 && data[0].content.includes('欢迎')) {
+                    resultEl.innerHTML += `\n\n<span class="success">✅ 中文显示正确!</span>`;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">❌ 错误: ${error.message}</span>`;
+            }
+        }
+
+        async function testSettings() {
+            const resultEl = document.getElementById('settings-result');
+            try {
+                const response = await fetch('http://localhost:8007/api/settings/');
+                const data = await response.json();
+                resultEl.innerHTML = `<span class="success">✅ 成功!</span>\n\n` + 
+                    JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">❌ 错误: ${error.message}</span>`;
+            }
+        }
+
+        async function testMonitor() {
+            const resultEl = document.getElementById('monitor-result');
+            try {
+                const response = await fetch('http://localhost:8007/api/monitor/stats');
+                const data = await response.json();
+                resultEl.innerHTML = `<span class="success">✅ 成功!</span>\n\n` + 
+                    JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">❌ 错误: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

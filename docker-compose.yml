@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: desktop_app
+    ports:
+      - "33007:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: 
+      context: ./backend
+    restart: always
+    ports:
+      - "8007:8007"
+    environment:
+      DATABASE_URL: mysql+pymysql://root:root@db:3306/desktop_app?charset=utf8mb4
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: always
+    ports:
+      - "3007:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
