@@ -19,7 +19,17 @@ export const ChatPage = () => {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const requestSeqRef = useRef(0)
   const { isDarkMode } = useTheme()
+
+  const sortMessages = (msgs: Message[]): Message[] => {
+    return [...msgs].sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime()
+      const timeB = new Date(b.timestamp).getTime()
+      if (timeA !== timeB) return timeA - timeB
+      return a.id - b.id
+    })
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -34,41 +44,38 @@ export const ChatPage = () => {
   }, [messages])
 
   const loadHistory = async () => {
+    const currentSeq = ++requestSeqRef.current
     try {
       const response = await chatAPI.getHistory()
-      setMessages(response.data)
+      if (currentSeq !== requestSeqRef.current) return
+      setMessages(sortMessages(response.data))
     } catch (error) {
+      if (currentSeq !== requestSeqRef.current) return
       console.error(error)
       message.error('加载聊天记录失败')
     }
   }
 
   const handleSend = async () => {
-    if (!input.trim()) {
+    if (!input.trim() || loading) {
       return
     }
 
     const userMessage = input
     setInput('')
     
-    // Optimistically add user message to UI immediately
     const tempUserMsg = {
       id: Date.now(),
       role: 'user',
       content: userMessage,
       timestamp: new Date().toISOString()
     }
-    setMessages([...messages, tempUserMsg])
+    setMessages(sortMessages([...messages, tempUserMsg]))
 
     setLoading(true)
     try {
-      // Send message and get AI response
       await chatAPI.sendMessage('user', userMessage)
-      
-      // Reload to get both user and AI messages from server
-      setTimeout(() => {
-        loadHistory()
-      }, 500)
+      await loadHistory()
     } catch (error) {
       console.error(error)
       message.error('发送消息失败')
