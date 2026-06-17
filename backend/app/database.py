@@ -11,7 +11,10 @@ DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:root@db:3306/desk
 # Create engine with explicit UTF-8 encoding settings
 engine = create_engine(
     DATABASE_URL, 
-    pool_pre_ping=False,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    pool_size=10,
+    max_overflow=20,
     connect_args={
         "charset": "utf8mb4",
         "use_unicode": True,

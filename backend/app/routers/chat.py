@@ -25,7 +25,7 @@ class MessageResponse(BaseModel):
 
 @router.get("/", response_model=List[MessageResponse])
 def get_history(limit: int = 50, db: Session = Depends(get_db)):
-    messages = db.query(ChatMessage).order_by(ChatMessage.timestamp.asc(), ChatMessage.id.desc()).limit(limit).all()
+    messages = db.query(ChatMessage).order_by(ChatMessage.timestamp.asc(), ChatMessage.id.asc()).limit(limit).all()
     return messages
 
 @router.post("/", response_model=MessageResponse)
