@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, Input, Button, List, Avatar, message } from 'antd'
 import { SendOutlined, UserOutlined, RobotOutlined } from '@ant-design/icons'
 import { chatAPI } from '../services/api'
@@ -19,6 +19,7 @@ export const ChatPage = () => {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const requestSeqRef = useRef(0)
   const { isDarkMode } = useTheme()
 
   const scrollToBottom = () => {
@@ -33,47 +34,61 @@ export const ChatPage = () => {
     scrollToBottom()
   }, [messages])
 
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
+    const currentSeq = ++requestSeqRef.current
     try {
       const response = await chatAPI.getHistory()
-      setMessages(response.data)
+      if (currentSeq === requestSeqRef.current) {
+        setMessages(response.data)
+      }
     } catch (error) {
-      console.error(error)
-      message.error('加载聊天记录失败')
+      if (currentSeq === requestSeqRef.current) {
+        console.error(error)
+        message.error('加载聊天记录失败')
+      }
     }
-  }
+  }, [])
 
   const handleSend = async () => {
-    if (!input.trim()) {
+    if (!input.trim() || loading) {
       return
     }
 
     const userMessage = input
     setInput('')
-    
-    // Optimistically add user message to UI immediately
-    const tempUserMsg = {
-      id: Date.now(),
+
+    const tempId = -Date.now()
+    const tempUserMsg: Message = {
+      id: tempId,
       role: 'user',
       content: userMessage,
       timestamp: new Date().toISOString()
     }
-    setMessages([...messages, tempUserMsg])
 
+    setMessages(prev => [...prev, tempUserMsg])
     setLoading(true)
+
+    const sendSeq = ++requestSeqRef.current
+
     try {
-      // Send message and get AI response
       await chatAPI.sendMessage('user', userMessage)
-      
-      // Reload to get both user and AI messages from server
-      setTimeout(() => {
-        loadHistory()
-      }, 500)
+
+      if (sendSeq === requestSeqRef.current) {
+        const historyResp = await chatAPI.getHistory()
+        if (sendSeq === requestSeqRef.current) {
+          setMessages(historyResp.data)
+        }
+      }
     } catch (error) {
-      console.error(error)
-      message.error('发送消息失败')
+      if (sendSeq === requestSeqRef.current) {
+        console.error(error)
+        message.error('发送消息失败')
+        setMessages(prev => prev.filter(m => m.id !== tempId))
+      }
     } finally {
-      setLoading(false)
+      if (sendSeq === requestSeqRef.current) {
+        setLoading(false)
+      }
     }
   }
 
