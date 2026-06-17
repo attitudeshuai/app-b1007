@@ -44,34 +44,35 @@ export const ChatPage = () => {
   }
 
   const handleSend = async () => {
-    if (!input.trim()) {
+    if (!input.trim() || loading) {
       return
     }
 
     const userMessage = input
     setInput('')
     
-    // Optimistically add user message to UI immediately
-    const tempUserMsg = {
-      id: Date.now(),
+    const tempUserMsg: Message = {
+      id: -Date.now(),
       role: 'user',
       content: userMessage,
       timestamp: new Date().toISOString()
     }
-    setMessages([...messages, tempUserMsg])
+    setMessages(prev => [...prev, tempUserMsg])
 
     setLoading(true)
     try {
-      // Send message and get AI response
-      await chatAPI.sendMessage('user', userMessage)
-      
-      // Reload to get both user and AI messages from server
-      setTimeout(() => {
-        loadHistory()
-      }, 500)
+      const response = await chatAPI.sendMessage('user', userMessage)
+      const aiMsg: Message = {
+        id: response.data.id,
+        role: response.data.role,
+        content: response.data.content,
+        timestamp: new Date(response.data.timestamp).toISOString()
+      }
+      setMessages(prev => [...prev, aiMsg])
     } catch (error) {
       console.error(error)
       message.error('发送消息失败')
+      setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id))
     } finally {
       setLoading(false)
     }
